@@ -28,7 +28,7 @@ public class Person {
     }
 }
 
-@Serialize(allFields = true, requiersParent = true)
+@Serialize(allFields = true, requiresParent = true)
 class Employee extends Person {
     private String position;
 
@@ -44,5 +44,25 @@ class Employee extends Person {
 
     public void setPosition(String position) {
         this.position = position;
+    }
+}
+
+@Serialize(allFields = true, requiresParent = true)
+class Programmer extends Employee
+{
+    private String heroinType;
+
+    public Programmer(String position,String name , int age, String heroinType)
+    {
+        super(position, name, age);
+        this.heroinType = heroinType;
+    }
+
+    public String getHeroinType() {
+        return heroinType;
+    }
+
+    public void setHeroinType(String heroinType) {
+        this.heroinType = heroinType;
     }
 }

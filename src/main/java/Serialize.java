@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Serialize {
     public boolean allFields() default false;
-    public boolean requiersParent() default false;
+    public boolean requiresParent() default false;
 }
