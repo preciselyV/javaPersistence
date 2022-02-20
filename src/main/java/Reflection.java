@@ -1,6 +1,10 @@
+import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import java.util.List;
 
 
@@ -75,19 +79,21 @@ public class Reflection {
         json.add("ClassName", className);
         if (fields != null)
         {
+
+            var flds = Json.createArrayBuilder();
             for (Field field : fields)
             {
                 try
                 {
                     field.setAccessible(true);
-                    json.add(field.getName(), field.get(obj).toString());
+                    flds.add( Json.createObjectBuilder().add(field.getName(), field.get(obj).toString()));
                 }
                 catch (IllegalAccessException e)
                 {
                     System.out.println("well, it was illegal");
                 }
             }
-
+            json.add("fields", flds);
         }
         System.out.println(json.build().toString());
     }
