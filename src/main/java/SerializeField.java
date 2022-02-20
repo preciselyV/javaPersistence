@@ -4,7 +4,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Serialize {
-    public boolean allFields() default false;
+@Target(ElementType.FIELD)
+public @interface SerializeField {
 }

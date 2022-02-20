@@ -1,7 +1,9 @@
 
-@Serialize(all = true)
+@Serialize(allFields = false)
 public class myClass {
+    //@SerializeField
     private String name;
+    @SerializeField
     private int age;
 
     public myClass (String name , int age)
