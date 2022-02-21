@@ -1,14 +1,10 @@
-import com.google.gson.Gson;
-
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import javax.json.Json;
-import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.util.Arrays;
@@ -79,14 +75,14 @@ public class Reflection {
         json.add("ClassName", className);
         if (fields != null)
         {
-            var flds = Json.createArrayBuilder();
+            var flds = Json.createObjectBuilder();
             for (Field field : fields)
             {
                 try
                 {
                     //TODO check whether we change visibility for every1 else
                     field.setAccessible(true);
-                    flds.add( Json.createObjectBuilder().add(field.getName(), field.get(obj).toString()));
+                    flds.add( field.getName(), field.get(obj).toString());
                 }
                 catch (IllegalAccessException e)
                 {
@@ -136,24 +132,19 @@ public class Reflection {
                 }
             }
         }
-        JsonArray ar = object.getJsonArray("fields");
+        JsonObject fields = object.getJsonObject("fields");
 
         ArrayList<Object> params = new ArrayList<>();
-        for (var stuff : ar)
+
+        Set<?> keys = fields.keySet();
+        for (var key : keys)
         {
-            JsonObject jsonObj = stuff.asJsonObject();
-            Set<?> keys = jsonObj.keySet();
-            for (var key : keys)
+            if (consParams.contains( (String) key))
             {
-                if (consParams.contains( (String) key))
-                {
-                    var rofl = (Object) jsonObj.getString( (String) key);
-                    params.add(rofl);
-                }
+                var rofl = (Object) fields.getString( (String) key);
+                params.add(rofl);
             }
         }
-
-
         Class<?>[] required = constructor.getParameterTypes();
         for (int i = 0; i< required.length; i++)
         {
