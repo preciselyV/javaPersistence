@@ -1,7 +1,11 @@
+import com.google.gson.Gson;
+
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -9,22 +13,20 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.beans.PropertyEditor;
+import java.beans.PropertyEditorManager;
+
 
 
 //TODO нужно придумать что делать с вложенными классами
 //TODO получать id объектов, чтобы разбираться с циклами
 //TODO настройка приватных полей.
 //TODO многопоточность для записи ?
-//TODO ага, jsonы тоже нужно добавить
 //TODO если атрибут класса это тоже класс, но при этом поле помечено, а класс нет - что делать? (настроение - падать)
 //TODO а что с суперклассами то делать?
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
-//TODO а что делать, когда у нас не один конструктор?
-//TODO а что делать с примитивными типами в конструкторе?
-// "initargs - array of objects to be passed as arguments to the constructor call; values of primitive types are wrapped in a wrapper object of the appropriate type (e.g. a float in a Float)"
-// так нифига они не совпадают, джава, але блин
-
 
 public class Reflection {
 
@@ -96,9 +98,14 @@ public class Reflection {
         return json.build().toString();
     }
 
+    //literally no idea how it does the trick... Magic, I guess
+    private static Object convert(Class<?> targetType, String text) {
+        PropertyEditor editor = PropertyEditorManager.findEditor(targetType);
+        editor.setAsText(text);
+        return editor.getValue();
+    }
 
-    public static void deserialize(String jsonString) throws ClassNotFoundException, NoSuchMethodException
-    {
+    public static Object deserialize(String jsonString) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
@@ -106,6 +113,7 @@ public class Reflection {
         String name = object.getString("ClassName");
         Class<?> cls = Class.forName(name);
         Object[] constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.isAnnotationPresent(JsonClassCreator.class)).toArray();
+        // пока мы просто договариваемся, что есть только один аннотированный конструктор
         if (constructors.length != 1)
         {
             // кажется пора писать кастомные исключения
@@ -114,14 +122,53 @@ public class Reflection {
         Constructor<?> constructor = (Constructor<?>)constructors[0];
 
         Annotation[][] annos = constructor.getParameterAnnotations();
+        ArrayList<String> consParams = new ArrayList<>();
+
         for (Annotation[] ano : annos)
         {
             if (ano.length == 0)
                 continue;
-            CreatorField an = (CreatorField) ano[0];
-            System.out.println(an.value());
+            for (Annotation an : ano)
+            {
+                if (an.annotationType().equals(CreatorField.class))
+                {
+                    consParams.add(((CreatorField) an).value());
+                }
+            }
+        }
+        JsonArray ar = object.getJsonArray("fields");
+
+        ArrayList<Object> params = new ArrayList<>();
+        for (var stuff : ar)
+        {
+            JsonObject jsonObj = stuff.asJsonObject();
+            Set<?> keys = jsonObj.keySet();
+            for (var key : keys)
+            {
+                if (consParams.contains( (String) key))
+                {
+                    var rofl = (Object) jsonObj.getString( (String) key);
+                    params.add(rofl);
+                }
+            }
         }
 
+
+        Class<?>[] required = constructor.getParameterTypes();
+        for (int i = 0; i< required.length; i++)
+        {
+            params.set(i, convert(required[i], (String) params.get(i)));
+        }
+
+        try
+        {
+            return constructor.newInstance(params.toArray());
+        }
+        catch (IllegalArgumentException e )
+        {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }
