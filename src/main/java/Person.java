@@ -6,7 +6,8 @@ public class Person {
     @SerializeField
     private int age;
 
-    public Person (String name , int age)
+    @JsonClassCreator
+    public Person (@CreatorField("name") String name , @CreatorField("age") int age)
     {
         this.name = name;
         this.age = age;

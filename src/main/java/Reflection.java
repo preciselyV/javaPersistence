@@ -1,4 +1,5 @@
 import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -6,6 +7,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -19,6 +21,9 @@ import java.util.List;
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
 //TODO а что делать, когда у нас не один конструктор?
+//TODO а что делать с примитивными типами в конструкторе?
+// "initargs - array of objects to be passed as arguments to the constructor call; values of primitive types are wrapped in a wrapper object of the appropriate type (e.g. a float in a Float)"
+// так нифига они не совпадают, джава, але блин
 
 
 public class Reflection {
@@ -91,19 +96,30 @@ public class Reflection {
         return json.build().toString();
     }
 
-    /*
-    вообще задача сводится к кринжу. Как выбрать конструктор?
-     */
-    public static void deserialize(String jsonString) throws ClassNotFoundException, NoSuchMethodException {
+
+    public static void deserialize(String jsonString) throws ClassNotFoundException, NoSuchMethodException
+    {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
+
         String name = object.getString("ClassName");
         Class<?> cls = Class.forName(name);
-        Constructor<?>[] constructors = cls.getConstructors();
-        if (constructors.length == 0 )
+        Object[] constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.isAnnotationPresent(JsonClassCreator.class)).toArray();
+        if (constructors.length != 1)
         {
+            // кажется пора писать кастомные исключения
             throw new NoSuchMethodException("couldn't find constructor for the class");
+        }
+        Constructor<?> constructor = (Constructor<?>)constructors[0];
+
+        Annotation[][] annos = constructor.getParameterAnnotations();
+        for (Annotation[] ano : annos)
+        {
+            if (ano.length == 0)
+                continue;
+            CreatorField an = (CreatorField) ano[0];
+            System.out.println(an.value());
         }
 
     }
