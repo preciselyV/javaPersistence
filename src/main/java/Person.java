@@ -6,6 +6,9 @@ public class Person {
     @SerializeField
     private int age;
 
+    @SerializeField
+    public ComplexField complexField = new ComplexField();
+
     @JsonClassCreator
     public Person (@CreatorField("name") String name , @CreatorField("age") int age)
     {
@@ -26,6 +29,15 @@ public class Person {
     }
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", complexField=" + complexField +
+                '}';
     }
 }
 
@@ -65,5 +77,24 @@ class Programmer extends Employee
 
     public void setHeroinType(String heroinType) {
         this.heroinType = heroinType;
+    }
+}
+
+@Serialize(allFields = true)
+class ComplexField {
+    @SerializeField
+    public int i = 0;
+    @SerializeField
+    public String str = "Some string";
+
+    //ComplexField(){};
+
+
+    @Override
+    public String toString() {
+        return "ComplexField{" +
+                "i=" + i +
+                ", str='" + str + '\'' +
+                '}';
     }
 }
