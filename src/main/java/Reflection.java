@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import java.util.Arrays;
 import java.util.List;
@@ -66,32 +67,42 @@ public class Reflection {
         }
     }
 
-    public static String serialize(Object obj)
+    public static String serialize(Object obj) {
+        return serializeInner(obj).build().toString();
+    }
+
+    private static JsonObjectBuilder serializeInner(Object obj)
     {
         Class<?> cls = obj.getClass();
         String className = cls.getName();
-        var fields = getFields(cls,obj);
+        var objectFields = getFields(cls,obj);
         var json = Json.createObjectBuilder();
         json.add("ClassName", className);
-        if (fields != null)
+        if (objectFields != null)
         {
-            var flds = Json.createObjectBuilder();
-            for (Field field : fields)
+            var jsonFields = Json.createObjectBuilder();
+            for (Field field : objectFields)
             {
                 try
                 {
                     //TODO check whether we change visibility for every1 else
                     field.setAccessible(true);
-                    flds.add( field.getName(), field.get(obj).toString());
+                    //TODO complex types + collections
+                    if (field.getType().isPrimitive() || field.getType().equals(Integer.class) ||
+                                field.getType().equals(String.class))
+                        jsonFields.add( field.getName(), field.get(obj).toString());
+                    else {
+                        jsonFields.add( field.getName(), serializeInner(field.get(obj)));
+                    }
                 }
                 catch (IllegalAccessException e)
                 {
                     System.out.println("well, for some reason it was illegal");
                 }
             }
-            json.add("fields", flds);
+            json.add("fields", jsonFields);
         }
-        return json.build().toString();
+        return json;
     }
 
     //literally no idea how it does the trick... Magic, I guess
