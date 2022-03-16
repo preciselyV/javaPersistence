@@ -9,7 +9,7 @@ class PersistenceFrameworkTest {
     @Test
     public void testComplexInnerFieldSerialization() throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
-        Person person = new Person("Author", 12);
+        Person person = new Person("Author", 12, new ComplexField());
         // serialization test
         String res = PersistenceFramework.serialize(person);
         System.out.println("Serialized JSON: " + res);

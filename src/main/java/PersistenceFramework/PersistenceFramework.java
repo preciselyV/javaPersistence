@@ -72,10 +72,10 @@ public class PersistenceFramework {
     }
 
     public static String serialize(Object obj) {
-        return serializeInner(obj).build().toString();
+        return serializeInner(obj).toString();
     }
 
-    private static JsonObjectBuilder serializeInner(Object obj)
+    private static JsonObject serializeInner(Object obj)
     {
         Class<?> cls = obj.getClass();
         String className = cls.getName();
@@ -106,7 +106,7 @@ public class PersistenceFramework {
             }
             json.add("fields", jsonFields);
         }
-        return json;
+        return json.build();
     }
 
     //literally no idea how it does the trick... Magic, I guess
@@ -123,17 +123,21 @@ public class PersistenceFramework {
         }
         try {
             return (T) deserializeObject(jsonString);
-        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
             throw new PersistenceException("Deserialization error", e);
         }
     }
 
-    public static Object deserializeObject(String jsonString) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static Object deserializeObject(String jsonString) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
+        return deserializeInner(object);
+    }
 
+
+    private static Object deserializeInner(JsonObject object) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         //Class initialization (find class and constructor)
         String name = object.getString("ClassName");
         Class<?> cls = Class.forName(name);
@@ -169,16 +173,26 @@ public class PersistenceFramework {
         {
             if (constructorParams.contains( (String) key))
             {
-                var rofl = (Object) fields.getString( (String) key);
-                params.add(rofl);
+                try {
+                    var value = (Object) fields.getString( (String) key);
+                    params.add(value);
+                }
+                catch (ClassCastException e) {
+                    var complexValue = fields.getJsonObject((String) key);
+                    params.add(deserializeInner(complexValue));
+                }
             }
         }
         // Parameters conversion to right types
         Class<?>[] required = constructor.getParameterTypes();
         for (int i = 0; i< required.length; i++)
         {
-            // TODO complex types
-            params.set(i, convert(required[i], (String) params.get(i)));
+            try {
+                params.set(i, convert(required[i], (String) params.get(i)));
+            }
+            catch (ClassCastException e) { // complex types
+                params.set(i, params.get(i));
+            }
         }
 
         try

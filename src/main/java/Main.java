@@ -22,7 +22,7 @@ public class Main {
 
         tmp t = new tmp("1","2",3);
 
-        Person ex = new Person("pomogiti", 228);
+        Person ex = new Person("pomogiti", 228, null);
         String res = PersistenceFramework.serialize(ex);
         System.out.println(res);
         try
@@ -38,7 +38,7 @@ public class Main {
         {
             System.out.println("class was not found");
         }
-        catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e )
+        catch (InvocationTargetException | InstantiationException | IllegalAccessException e )
         {
             System.out.println("huinya");
             System.out.println("apparently there is no constructor for the class");

@@ -11,13 +11,14 @@ public class Person {
     private int age;
 
     @SerializeField
-    public ComplexField complexField = new ComplexField();
+    public ComplexField complexField;
 
     @JsonClassCreator
-    public Person (@CreatorField("name") String name , @CreatorField("age") int age)
+    public Person (@CreatorField("name") String name , @CreatorField("age") int age, @CreatorField("complexField") ComplexField complexField)
     {
         this.name = name;
         this.age = age;
+        this.complexField = complexField;
     }
 
     public void setName(String name) {
@@ -51,7 +52,7 @@ class Employee extends Person {
 
     public Employee(String position,String name , int age)
     {
-        super(name,age);
+        super(name,age, null);
         this.position = position;
     }
 
@@ -84,21 +85,3 @@ class Programmer extends Employee
     }
 }
 
-@Serialize(allFields = true)
-class ComplexField {
-    @SerializeField
-    public int i = 0;
-    @SerializeField
-    public String str = "Some string";
-
-    //ComplexField(){};
-
-
-    @Override
-    public String toString() {
-        return "ComplexField{" +
-                "i=" + i +
-                ", str='" + str + '\'' +
-                '}';
-    }
-}
