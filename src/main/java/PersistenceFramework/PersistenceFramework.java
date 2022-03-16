@@ -1,3 +1,5 @@
+package PersistenceFramework;
+
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -123,7 +125,7 @@ public class PersistenceFramework {
             return (T) deserializeObject(jsonString);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
-            return null;
+            throw new PersistenceException(e);
         }
     }
 
@@ -138,8 +140,7 @@ public class PersistenceFramework {
         // пока мы просто договариваемся, что есть только один аннотированный конструктор
         if (constructors.length != 1)
         {
-            // кажется пора писать кастомные исключения
-            throw new NoSuchMethodException("couldn't find constructor for the class");
+            throw new PersistenceException("Couldn't find constructor for the class");
         }
         Constructor<?> constructor = (Constructor<?>)constructors[0];
 
