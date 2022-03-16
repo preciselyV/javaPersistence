@@ -21,11 +21,11 @@ public class Main {
         tmp t = new tmp("1","2",3);
 
         Person ex = new Person("pomogiti", 228);
-        String res = Reflection.serialize(ex);
+        String res = PersistenceFramework.serialize(ex);
         System.out.println(res);
         try
         {
-            Person p = (Person) Reflection.deserializeObject(res);
+            Person p = (Person) PersistenceFramework.deserializeObject(res);
             if (p != null)
             {
                 System.out.println(p.getAge());

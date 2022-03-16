@@ -25,9 +25,9 @@ import java.beans.PropertyEditorManager;
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
 
-public class Reflection {
+public class PersistenceFramework {
 
-    public Reflection() {}
+    public PersistenceFramework() {}
 
     private static ArrayList<Field> getFields(Class<?> cls, Object obj)
     {
