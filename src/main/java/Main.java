@@ -1,6 +1,4 @@
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 
 class tmp {
     public String s1;
@@ -27,7 +25,7 @@ public class Main {
         System.out.println(res);
         try
         {
-            Person p = (Person) Reflection.deserialize(res);
+            Person p = (Person) Reflection.deserializeObject(res);
             if (p != null)
             {
                 System.out.println(p.getAge());

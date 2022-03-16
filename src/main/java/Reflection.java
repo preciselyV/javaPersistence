@@ -27,6 +27,8 @@ import java.beans.PropertyEditorManager;
 
 public class Reflection {
 
+    public Reflection() {}
+
     private static ArrayList<Field> getFields(Class<?> cls, Object obj)
     {
 
@@ -112,7 +114,20 @@ public class Reflection {
         return editor.getValue();
     }
 
-    public static Object deserialize(String jsonString) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @SuppressWarnings("unchecked") // haha
+    public <T> T deserialize(String jsonString, Class<T> valueType) {
+        if (jsonString == null) {
+            throw new NullPointerException("Argument \"jsonString\" is null");
+        }
+        try {
+            return (T) deserializeObject(jsonString);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Object deserializeObject(String jsonString) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();

@@ -15,7 +15,8 @@ class ReflectionTest {
         assertTrue(res.contains("Author"));
         assertTrue(res.contains("12"));
         // deserialization test
-        Person p = (Person) Reflection.deserialize(res);
+        Reflection framework = new Reflection();
+        Person p = framework.deserialize(res, Person.class);
         assertNotNull(p);
         System.out.println("Deserialized JSON: " + p);
         assertEquals(p.getAge(), 12);
