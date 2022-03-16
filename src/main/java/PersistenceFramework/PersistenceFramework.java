@@ -125,7 +125,7 @@ public class PersistenceFramework {
             return (T) deserializeObject(jsonString);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
-            throw new PersistenceException(e);
+            throw new PersistenceException("Deserialization error", e);
         }
     }
 
@@ -134,6 +134,7 @@ public class PersistenceFramework {
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
 
+        //Class initialization (find class and constructor)
         String name = object.getString("ClassName");
         Class<?> cls = Class.forName(name);
         Object[] constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.isAnnotationPresent(JsonClassCreator.class)).toArray();
@@ -145,7 +146,7 @@ public class PersistenceFramework {
         Constructor<?> constructor = (Constructor<?>)constructors[0];
 
         Annotation[][] annos = constructor.getParameterAnnotations();
-        ArrayList<String> consParams = new ArrayList<>();
+        ArrayList<String> constructorParams = new ArrayList<>();
 
         for (Annotation[] ano : annos)
         {
@@ -155,26 +156,28 @@ public class PersistenceFramework {
             {
                 if (an.annotationType().equals(CreatorField.class))
                 {
-                    consParams.add(((CreatorField) an).value());
+                    constructorParams.add(((CreatorField) an).value());
                 }
             }
         }
+
+        //Fields initialization
         JsonObject fields = object.getJsonObject("fields");
-
         ArrayList<Object> params = new ArrayList<>();
-
         Set<?> keys = fields.keySet();
         for (var key : keys)
         {
-            if (consParams.contains( (String) key))
+            if (constructorParams.contains( (String) key))
             {
                 var rofl = (Object) fields.getString( (String) key);
                 params.add(rofl);
             }
         }
+        // Parameters conversion to right types
         Class<?>[] required = constructor.getParameterTypes();
         for (int i = 0; i< required.length; i++)
         {
+            // TODO complex types
             params.set(i, convert(required[i], (String) params.get(i)));
         }
 
