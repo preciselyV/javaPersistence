@@ -9,13 +9,13 @@ public class ComplexField {
     @SerializeField
     public String str = "Some string";
 
-    @JsonClassCreator
+
     public ComplexField(){};
 
-    /*ComplexField(int i, String str){
+    ComplexField(int i, String str){
         this.i = i;
         this.str = str;
-    }*/
+    }
 
     @Override
     public String toString() {

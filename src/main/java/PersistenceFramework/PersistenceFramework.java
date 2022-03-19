@@ -143,67 +143,78 @@ public class PersistenceFramework {
         Class<?> cls = Class.forName(name);
         Object[] constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.isAnnotationPresent(JsonClassCreator.class)).toArray();
         // пока мы просто договариваемся, что есть только один аннотированный конструктор
-        if (constructors.length != 1)
+        if (constructors.length == 1)
         {
-            throw new PersistenceException("Couldn't find constructor for the class");
-        }
-        Constructor<?> constructor = (Constructor<?>)constructors[0];
 
-        Annotation[][] annos = constructor.getParameterAnnotations();
-        ArrayList<String> constructorParams = new ArrayList<>();
+            Constructor<?> constructor = (Constructor<?>)constructors[0];
 
-        for (Annotation[] ano : annos)
-        {
-            if (ano.length == 0)
-                continue;
-            for (Annotation an : ano)
+            Annotation[][] annos = constructor.getParameterAnnotations();
+            ArrayList<String> constructorParams = new ArrayList<>();
+
+            for (Annotation[] ano : annos)
             {
-                if (an.annotationType().equals(CreatorField.class))
+                if (ano.length == 0)
+                    continue;
+                for (Annotation an : ano)
                 {
-                    constructorParams.add(((CreatorField) an).value());
+                    if (an.annotationType().equals(CreatorField.class))
+                    {
+                        constructorParams.add(((CreatorField) an).value());
+                    }
                 }
             }
-        }
 
-        //Fields initialization
-        JsonObject fields = object.getJsonObject("fields");
-        ArrayList<Object> params = new ArrayList<>();
-        Set<?> keys = fields.keySet();
-        for (var key : keys)
-        {
-            if (constructorParams.contains( (String) key))
+            //Fields initialization
+            JsonObject fields = object.getJsonObject("fields");
+            ArrayList<Object> params = new ArrayList<>();
+            Set<?> keys = fields.keySet();
+            for (var key : keys)
+            {
+                if (constructorParams.contains( (String) key))
+                {
+                    try {
+                        var value = (Object) fields.getString( (String) key);
+                        params.add(value);
+                    }
+                    catch (ClassCastException e) {
+                        var complexValue = fields.getJsonObject((String) key);
+                        params.add(deserializeInner(complexValue));
+                    }
+                }
+            }
+            // Parameters conversion to right types
+            Class<?>[] required = constructor.getParameterTypes();
+            for (int i = 0; i< required.length; i++)
             {
                 try {
-                    var value = (Object) fields.getString( (String) key);
-                    params.add(value);
+                    params.set(i, convert(required[i], (String) params.get(i)));
                 }
-                catch (ClassCastException e) {
-                    var complexValue = fields.getJsonObject((String) key);
-                    params.add(deserializeInner(complexValue));
+                catch (ClassCastException e) { // complex types
+                    params.set(i, params.get(i));
                 }
             }
-        }
-        // Parameters conversion to right types
-        Class<?>[] required = constructor.getParameterTypes();
-        for (int i = 0; i< required.length; i++)
-        {
-            try {
-                params.set(i, convert(required[i], (String) params.get(i)));
-            }
-            catch (ClassCastException e) { // complex types
-                params.set(i, params.get(i));
-            }
-        }
 
-        try
-        {
-            return constructor.newInstance(params.toArray());
+            try
+            {
+                return constructor.newInstance(params.toArray());
+            }
+            catch (IllegalArgumentException e )
+            {
+                e.printStackTrace();
+                return null;
+            }
         }
-        catch (IllegalArgumentException e )
-        {
-            e.printStackTrace();
-            return null;
+        else {
+            constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.getParameterCount() == 0).toArray();
+            if (constructors.length == 1) {
+                Constructor<?> constructor = (Constructor<?>)constructors[0];
+                return constructor.newInstance();
+            }
+            else {
+                throw new PersistenceException("Couldn't find constructor for the class");
+            }
         }
+        // TODO поля, которые не были затронуты конструктором
     }
 
 }
