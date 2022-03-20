@@ -51,8 +51,8 @@ class PersistenceFrameworkTest {
         String res = PersistenceFramework.serialize(person);
         System.out.println("  Serialized JSON: " + res);
         JSONPredicate<Integer> jsonPredicate1 = new JSONPredicate<>("complexField/i", (Integer i) -> i == 0, Integer.class);
-        JSONPredicate<String> jsonPredicate2 = new JSONPredicate<>("complexField/str", (String s) -> s.length()>5, String.class);
-        var j = jsonPredicate1.and(jsonPredicate2);
+        JSONPredicate<String> jsonPredicate2 = new JSONPredicate<>("complexField/str", (String s) -> s.length()<5, String.class);
+        var j = jsonPredicate1.and(jsonPredicate2.negate());
 
         JsonReader jsonReader = Json.createReader(new StringReader(res));
         JsonObject object = jsonReader.readObject();

@@ -16,7 +16,10 @@ public class JSONPredicate<T> implements Predicate<JsonObject> {
     public JSONPredicate(String path, Predicate<T> fieldPredicate, Class<T> valueType) {
         if (path == null)
             throw new NullPointerException("Argument \"path\" is null");
-
+        if (!(valueType.isPrimitive() || valueType.equals(Integer.class) ||
+                valueType.equals(String.class))) {
+            throw new PersistenceException("Predicates work only with primitive types");
+        }
         this.path = path;
         this.fieldPredicate = fieldPredicate;
         this.valueType = valueType;

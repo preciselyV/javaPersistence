@@ -92,7 +92,7 @@ public class PersistenceFramework {
                 {
                     //TODO check whether we change visibility for every1 else
                     field.setAccessible(true);
-                    //TODO complex types + collections
+                    //TODO collections
                     if (field.getType().isPrimitive() || field.getType().equals(Integer.class) ||
                                 field.getType().equals(String.class))
                         jsonFields.add( field.getName(), field.get(obj).toString());
