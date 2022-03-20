@@ -27,7 +27,7 @@ public class Main {
         System.out.println(res);
         try
         {
-            Person p = (Person) PersistenceFramework.deserializeObject(res);
+            Person p = (Person) PersistenceFramework.deserializeObject(res, null);
             if (p != null)
             {
                 System.out.println(p.getAge());

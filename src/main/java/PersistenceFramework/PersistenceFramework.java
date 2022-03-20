@@ -26,6 +26,7 @@ import java.beans.PropertyEditorManager;
 //TODO а что с суперклассами то делать?
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
+// TODO JsonArray support
 
 public class PersistenceFramework {
 
@@ -110,7 +111,7 @@ public class PersistenceFramework {
     }
 
     //literally no idea how it does the trick... Magic, I guess
-    private static Object convert(Class<?> targetType, String text) {
+    protected static Object convert(Class<?> targetType, String text) {
         PropertyEditor editor = PropertyEditorManager.findEditor(targetType);
         editor.setAsText(text);
         return editor.getValue();
@@ -122,17 +123,37 @@ public class PersistenceFramework {
             throw new NullPointerException("Argument \"jsonString\" is null");
         }
         try {
-            return (T) deserializeObject(jsonString);
+            return (T) deserializeObject(jsonString, null);
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
             throw new PersistenceException("Deserialization error", e);
         }
     }
 
-    public static Object deserializeObject(String jsonString) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @SuppressWarnings("unchecked") // haha
+    public <T,V> T deserialize(String jsonString, Class<T> valueType, JSONPredicate<V> predicate) {
+        if (jsonString == null) {
+            throw new NullPointerException("Argument \"jsonString\" is null");
+        }
+        try {
+            return (T) deserializeObject(jsonString, predicate);
+        } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            throw new PersistenceException("Deserialization error", e);
+        }
+    }
+
+    public static <V> Object deserializeObject(String jsonString, JSONPredicate<V> predicate) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
+        // TODO JsonArray on upper level support
+        if (predicate != null) {
+            JsonObject fields = object.getJsonObject("fields");
+            if (predicate.test(fields))
+                return deserializeInner(object);
+            else return null;
+        }
         return deserializeInner(object);
     }
 
