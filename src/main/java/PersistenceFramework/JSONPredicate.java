@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class JSONPredicate<T> {
+public class JSONPredicate<T> implements Predicate<JsonObject> {
     String path;
     Predicate<T> fieldPredicate;
     List<String> pathNames;
@@ -27,7 +27,7 @@ public class JSONPredicate<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected boolean test(JsonObject jsonObjectFields) {
+    public boolean test(JsonObject jsonObjectFields) {
         JsonObject currentObj = jsonObjectFields;
         for (int i = 0; i < pathNames.size(); i++) {
             String name = pathNames.get(i);

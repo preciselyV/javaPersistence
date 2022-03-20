@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
-
+import java.util.function.Predicate;
 
 
 //TODO нужно придумать что делать с вложенными классами
@@ -131,7 +131,7 @@ public class PersistenceFramework {
     }
 
     @SuppressWarnings("unchecked") // haha
-    public <T,V> T deserialize(String jsonString, Class<T> valueType, JSONPredicate<V> predicate) {
+    public <T> T deserialize(String jsonString, Class<T> valueType, Predicate<JsonObject> predicate) {
         if (jsonString == null) {
             throw new NullPointerException("Argument \"jsonString\" is null");
         }
@@ -143,7 +143,7 @@ public class PersistenceFramework {
         }
     }
 
-    public static <V> Object deserializeObject(String jsonString, JSONPredicate<V> predicate) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static Object deserializeObject(String jsonString, Predicate<JsonObject> predicate) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
