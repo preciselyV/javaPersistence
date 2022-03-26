@@ -26,6 +26,8 @@ import java.util.function.Predicate;
 
 public class PersistenceFramework {
 
+    private static Stack<Object> alreadySerialized = new Stack<>();
+
     public PersistenceFramework() {}
 
     private static ArrayList<Field> getFields(Class<?> cls, Object obj)
@@ -76,6 +78,8 @@ public class PersistenceFramework {
 
     private static JsonObject serializeInner(Object obj)
     {
+        if (alreadySerialized.contains(obj))
+            throw new PersistenceException("Cyclic object reference occurred");
         Class<?> cls = obj.getClass();
         String className = cls.getName();
         var objectFields = getFields(cls,obj);
@@ -92,11 +96,15 @@ public class PersistenceFramework {
                     field.setAccessible(true);
                     if (isPrimitiveToSerializer(field.getType()))
                         jsonFields.add( field.getName(), field.get(obj).toString());
-                    else if (/*field.getType().isArray() || */Collection.class.isAssignableFrom(field.getType())) {
+                    else if (Collection.class.isAssignableFrom(field.getType())) {
+                        alreadySerialized.push(obj);
                         jsonFields.add(field.getName(), serializeCollection((Collection<?>) field.get(obj)));
+                        alreadySerialized.pop();
                     }
                     else {
-                        jsonFields.add( field.getName(), serializeInner(field.get(obj)));
+                        alreadySerialized.push(obj);
+                        jsonFields.add(field.getName(), serializeInner(field.get(obj)));
+                        alreadySerialized.pop();
                     }
                 }
                 catch (IllegalAccessException e)
@@ -118,10 +126,14 @@ public class PersistenceFramework {
                 arrBuilder.add(element.toString());
             }
             else if (Collection.class.isAssignableFrom(element.getClass())) {
+                alreadySerialized.push(element);
                 arrBuilder.add(serializeCollection((Collection<?>) element));
+                alreadySerialized.pop();
             }
             else {
+                alreadySerialized.push(element);
                 arrBuilder.add(serializeInner(element));
+                alreadySerialized.pop();
             }
         }
         return arrBuilder.build();

@@ -1,7 +1,9 @@
 import PersistenceFramework.*;
+
 import org.junit.jupiter.api.Test;
 import test.classes.ComplexField;
 import test.classes.Person;
+import test.classes.User;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -115,4 +117,12 @@ class PersistenceFrameworkTest {
         assertTrue(result.contains("[\"1\",\"2\",\"3\",\"4\"]"));
         assertTrue(result.contains("[\"0\",\"0\"]"));
     }
+
+
+    /*@Test(expected = PersistenceException.class)
+    public void testBidirectionalRelationshipsSerialization() {
+        User user = new User(1, "John");
+        User.Item item = new User.Item(2, "book", user);
+        user.addItem(item);
+    }*/
 }
