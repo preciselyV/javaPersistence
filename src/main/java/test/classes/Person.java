@@ -1,3 +1,5 @@
+package test.classes;
+
 import PersistenceFramework.CreatorField;
 import PersistenceFramework.JsonClassCreator;
 import PersistenceFramework.Serialize;
@@ -38,7 +40,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return "Person{" +
+        return "test.classes.Person{" +
                 "name='" + name + '\'' +
                 ", age=" + age +
                 ", complexField=" + complexField +

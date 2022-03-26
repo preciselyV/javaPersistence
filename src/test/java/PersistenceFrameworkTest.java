@@ -1,11 +1,14 @@
 import PersistenceFramework.*;
 import org.junit.jupiter.api.Test;
+import test.classes.ComplexField;
+import test.classes.Person;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +26,7 @@ class PersistenceFrameworkTest {
         PersistenceFramework framework = new PersistenceFramework();
         Person p = framework.deserialize(res, Person.class);
         assertNotNull(p);
-        System.out.println("  Deserialized JSON: " + p);
+        System.out.println("  Deserialized JSON: " + p + "\n");
         assertEquals(p.getAge(), 12);
         assertEquals(p.getName(), "Author");
         assertNotNull(p.complexField);
@@ -41,7 +44,7 @@ class PersistenceFrameworkTest {
         // simple predicates can be used in deserialization
         Person p = framework.deserialize(res, Person.class, jsonPredicate);
         assertNull(p);
-        System.out.println("  Object wasn`t deserialized");
+        System.out.println("  Object wasn`t deserialized because of predicate" + "\n");
     }
 
     @Test
@@ -54,16 +57,62 @@ class PersistenceFrameworkTest {
         JSONPredicate<String> jsonPredicate2 = new JSONPredicate<>("complexField/str", (String s) -> s.length()<5, String.class);
         var j = jsonPredicate1.and(jsonPredicate2.negate());
 
+        // test predicates test() method
         JsonReader jsonReader = Json.createReader(new StringReader(res));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
         JsonObject fields = object.getJsonObject("fields");
-        System.out.println("  Complex predicate result: " + j.test(fields));
+        System.out.println("  Complex predicate result: " + j.test(fields) + "\n");
         assertTrue(j.test(fields));
 
         PersistenceFramework framework = new PersistenceFramework();
         // complex predicates can be used in deserialization
         Person p = framework.deserialize(res, Person.class, j);
         assertNotNull(p);
+    }
+
+    @Test
+    public void testSerializeObjectsWithSimpleCollections() {
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(1321); ids.add(1322); ids.add(1233);
+        ComplexField cf = new ComplexField(19214, "group", ids);
+
+        System.out.println("Serializing objects with simple collections: ");
+        String result = PersistenceFramework.serialize(cf);
+        System.out.println("  Serialized JSON: " + result  + "\n");
+        assertTrue(result.contains("[\"1321\",\"1322\",\"1233\"]"));
+    }
+
+    @Test
+    public void testSerializeSimpleCollections() {
+        ArrayList<String> names = new ArrayList<>();
+        names.add("Maksim"); names.add("Vladimir"); names.add("Arseniy"); names.add("Denis");
+
+        System.out.println("Serializing simple collections: ");
+        String result = PersistenceFramework.serialize(names);
+        System.out.println("  Serialized JSON: " + result + "\n");
+        assertTrue(result.contains("Maksim"));
+        assertTrue(result.contains("Vladimir"));
+        assertTrue(result.contains("Arseniy"));
+        assertTrue(result.contains("Denis"));
+    }
+
+    @Test
+    public void testSerializeCollectionsOfCollections() {
+        ArrayList<ArrayList<Integer>> coll = new ArrayList<>();
+        ArrayList<Integer> ints1 = new ArrayList<>();
+        ints1.add(1321); ints1.add(1322); ints1.add(1233);
+        ArrayList<Integer> ints2 = new ArrayList<>();
+        ints2.add(1); ints2.add(2); ints2.add(3); ints2.add(4);
+        ArrayList<Integer> ints3 = new ArrayList<>();
+        ints3.add(0); ints3.add(0);
+        coll.add(ints1); coll.add(ints2); coll.add(ints3);
+
+        System.out.println("Serializing collections of simple collections: ");
+        String result = PersistenceFramework.serialize(coll);
+        System.out.println("  Serialized JSON: " + result + "\n");
+        assertTrue(result.contains("[\"1321\",\"1322\",\"1233\"]"));
+        assertTrue(result.contains("[\"1\",\"2\",\"3\",\"4\"]"));
+        assertTrue(result.contains("[\"0\",\"0\"]"));
     }
 }

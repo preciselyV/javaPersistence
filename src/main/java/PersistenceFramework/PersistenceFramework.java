@@ -5,14 +5,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import javax.json.*;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
 import java.util.function.Predicate;
@@ -26,7 +20,9 @@ import java.util.function.Predicate;
 //TODO а что с суперклассами то делать?
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
-// TODO JsonArray support
+// TODO simple array support?
+// TODO null fields support
+
 
 public class PersistenceFramework {
 
@@ -73,6 +69,8 @@ public class PersistenceFramework {
     }
 
     public static String serialize(Object obj) {
+        if (obj instanceof Collection)
+            return serializeCollection((Collection<?>) obj).toString();
         return serializeInner(obj).toString();
     }
 
@@ -92,10 +90,11 @@ public class PersistenceFramework {
                 {
                     //TODO check whether we change visibility for every1 else
                     field.setAccessible(true);
-                    //TODO collections
-                    if (field.getType().isPrimitive() || field.getType().equals(Integer.class) ||
-                                field.getType().equals(String.class))
+                    if (isPrimitiveToSerializer(field.getType()))
                         jsonFields.add( field.getName(), field.get(obj).toString());
+                    else if (/*field.getType().isArray() || */Collection.class.isAssignableFrom(field.getType())) {
+                        jsonFields.add(field.getName(), serializeCollection((Collection<?>) field.get(obj)));
+                    }
                     else {
                         jsonFields.add( field.getName(), serializeInner(field.get(obj)));
                     }
@@ -110,8 +109,26 @@ public class PersistenceFramework {
         return json.build();
     }
 
+    protected static JsonArray serializeCollection (Collection<?> collection) {
+        JsonArrayBuilder arrBuilder = Json.createArrayBuilder();
+
+        for (var element : collection) {
+            if (element.getClass().isPrimitive() || element.getClass().equals(Integer.class) ||
+                                                    element.getClass().equals(String.class)) {
+                arrBuilder.add(element.toString());
+            }
+            else if (Collection.class.isAssignableFrom(element.getClass())) {
+                arrBuilder.add(serializeCollection((Collection<?>) element));
+            }
+            else {
+                arrBuilder.add(serializeInner(element));
+            }
+        }
+        return arrBuilder.build();
+    }
+
     //literally no idea how it does the trick... Magic, I guess
-    protected static Object convert(Class<?> targetType, String text) {
+    public static Object convert(Class<?> targetType, String text) {
         PropertyEditor editor = PropertyEditorManager.findEditor(targetType);
         editor.setAsText(text);
         return editor.getValue();
@@ -238,4 +255,14 @@ public class PersistenceFramework {
         // TODO поля, которые не были затронуты конструктором
     }
 
+    protected static boolean isPrimitiveToSerializer(Class<?> cls) {
+        // java.beans.PropertyEditorManager documentation says it is supported
+        // so i suppose that our convert() method will be able to process it
+        return cls.isPrimitive() || cls.equals(Integer.class) ||
+                cls.equals(String.class) || cls.equals(Double.class) ||
+                cls.equals(Boolean.class) || cls.equals(Byte.class) ||
+                cls.equals(Short.class) || cls.equals(Long.class) ||
+                cls.equals(Float.class) /*|| cls.equals(java.awt.Color.class) ||
+                cls.equals(java.awt.Font.class)*/;
+    }
 }

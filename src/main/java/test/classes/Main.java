@@ -1,3 +1,5 @@
+package test.classes;
+
 import PersistenceFramework.PersistenceFramework;
 
 import java.lang.reflect.InvocationTargetException;
@@ -18,11 +20,11 @@ class tmp {
 
 public class Main {
     public static void main(String[] args) {
-        //Programmer ex = new Programmer("asshole","Rofl Olegovich", 23, "original");
+        //test.classes.Programmer ex = new test.classes.Programmer("asshole","Rofl Olegovich", 23, "original");
 
         tmp t = new tmp("1","2",3);
 
-        Person ex = new Person("pomogiti", 228, null);
+        Person ex = new Person("pomogiti", 228, new ComplexField());
         String res = PersistenceFramework.serialize(ex);
         System.out.println(res);
         try

@@ -108,7 +108,7 @@ modules.xml
 *.ctxt
 
 # Mobile Tools for Java (J2ME)
-.mtj.tmp/
+.mtj.test.classes.tmp/
 
 # Package Files #
 *.jar
