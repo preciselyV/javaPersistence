@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PersistenceFrameworkTest {
     @Test
-    public void testComplexInnerFieldSerialization() throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public void testComplexInnerFieldSerialization()  {
         System.out.println("Base functionality test:");
         Person person = new Person("Author", 12, new ComplexField(145, "Intresting String"));
         // serialization test
@@ -139,5 +139,19 @@ class PersistenceFrameworkTest {
         System.out.println("Test equal object serialization:");
         String res = PersistenceFramework.serialize(users);
         System.out.println("  Serialized JSON: " + res + "\n");
+    }
+
+    @Test
+    public void testSimpleArrayDeserialization() {
+        ArrayList<String> names = new ArrayList<>();
+        names.add("Maksim"); names.add("Vladimir"); names.add("Arseniy"); names.add("Denis");
+
+        System.out.println("Test equal object serialization:");
+        String res = PersistenceFramework.serialize(names);
+        System.out.println("  Serialized JSON: " + res + "\n");
+
+        PersistenceFramework pf = new PersistenceFramework();
+        ArrayList<String> des = pf.deserialize(res);
+        System.out.println(des);
     }
 }

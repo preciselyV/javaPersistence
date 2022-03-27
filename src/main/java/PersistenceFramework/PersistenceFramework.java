@@ -118,7 +118,12 @@ public class PersistenceFramework {
         return json.build();
     }
 
-    protected static JsonArray serializeCollection (Collection<?> collection) {
+    protected static JsonObject serializeCollection (Collection<?> collection) {
+        JsonObjectBuilder collectionBuilder = Json.createObjectBuilder();
+        collectionBuilder.add("ClassName",collection.getClass().getName());
+        if (collection.size() != 0)
+            collectionBuilder.add("genericType", collection.iterator().next().getClass().getName());
+        else collectionBuilder.add("genericType", JsonValue.NULL);
         JsonArrayBuilder arrBuilder = Json.createArrayBuilder();
 
         for (var element : collection) {
@@ -137,7 +142,8 @@ public class PersistenceFramework {
                 alreadySerialized.pop();
             }
         }
-        return arrBuilder.build();
+        collectionBuilder.add("array",arrBuilder.build());
+        return collectionBuilder.build();
     }
 
     //literally no idea how it does the trick... Magic, I guess
@@ -177,16 +183,55 @@ public class PersistenceFramework {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
-        // TODO JsonArray on upper level support
-        if (predicate != null) {
-            JsonObject fields = object.getJsonObject("fields");
-            if (predicate.test(fields))
-                return deserializeInner(object);
-            else return null;
+        if (object.containsKey("field")){
+            if (predicate != null) {
+                JsonObject fields = object.getJsonObject("fields");
+                if (predicate.test(fields))
+                    return deserializeInner(object);
+                else return null;
+            }
+            return deserializeInner(object);
         }
-        return deserializeInner(object);
+        // collection on upper level support
+        else if (object.containsKey("array")) {
+            // TODO predicate
+            return deserializeCollection(object);
+        }
+        return null;
     }
 
+    // Обёртка над десериализаторами, чтобы не нужно было постоянно делать эту классификацию
+    private static Object deserializeJsonObject(JsonObject object) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        if (object.containsKey("field")){
+            return deserializeInner(object);
+        }
+        else if (object.containsKey("array")) {
+            deserializeCollection(object);
+        }
+        return null;
+    }
+
+
+    public static Collection<?> deserializeCollection(JsonObject jsonObject) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        String name = jsonObject.getString("ClassName");
+        Class<?> cls = Class.forName(name);
+        Collection<Object> collection = (Collection<Object>) Arrays.stream(cls.getConstructors()).filter(c ->  c.getParameterCount() == 0).toList().get(0).newInstance();
+        String genericClass = jsonObject.getString("genericType");
+        if (genericClass == null){
+            return collection;
+        }
+        Class<?> genCls = Class.forName(genericClass);
+
+        JsonArray jsonArray = jsonObject.getJsonArray("array");
+        for (JsonValue jsonValue : jsonArray) {
+            if (jsonValue.getValueType() == JsonValue.ValueType.STRING) {
+                collection.add(convert(genCls, jsonValue.toString()));
+            } else {
+                collection.add(deserializeJsonObject(jsonValue.asJsonObject()));
+            }
+        }
+        return collection;
+    }
 
     private static Object deserializeInner(JsonObject object) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         //Class initialization (find class and constructor)
