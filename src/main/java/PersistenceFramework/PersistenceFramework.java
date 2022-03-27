@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 // TODO simple array support?
 // TODO collection with predicate support
 // TODO null fields support
+// TODO collection deserialization
 
 
 public class PersistenceFramework {
@@ -146,8 +147,8 @@ public class PersistenceFramework {
         return editor.getValue();
     }
 
-    @SuppressWarnings("unchecked") // haha
-    public <T> T deserialize(String jsonString, Class<T> valueType) {
+    @SuppressWarnings("unchecked")
+    public <T> T deserialize(String jsonString) {
         if (jsonString == null) {
             throw new NullPointerException("Argument \"jsonString\" is null");
         }
@@ -160,7 +161,7 @@ public class PersistenceFramework {
     }
 
     @SuppressWarnings("unchecked") // haha
-    public <T> T deserialize(String jsonString, Class<T> valueType, Predicate<JsonObject> predicate) {
+    public <T> T deserialize(String jsonString, Predicate<JsonObject> predicate) {
         if (jsonString == null) {
             throw new NullPointerException("Argument \"jsonString\" is null");
         }

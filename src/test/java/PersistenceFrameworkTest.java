@@ -26,7 +26,7 @@ class PersistenceFrameworkTest {
         assertTrue(res.contains("12"));
         // deserialization test
         PersistenceFramework framework = new PersistenceFramework();
-        Person p = framework.deserialize(res, Person.class);
+        Person p = framework.deserialize(res);
         assertNotNull(p);
         System.out.println("  Deserialized JSON: " + p + "\n");
         assertEquals(p.getAge(), 12);
@@ -44,7 +44,7 @@ class PersistenceFrameworkTest {
         PersistenceFramework framework = new PersistenceFramework();
         JSONPredicate<Integer> jsonPredicate = new JSONPredicate<Integer>("complexField/i", (Integer i) -> i != 0, Integer.class);
         // simple predicates can be used in deserialization
-        Person p = framework.deserialize(res, Person.class, jsonPredicate);
+        Person p = framework.deserialize(res, jsonPredicate);
         assertNull(p);
         System.out.println("  Object wasn`t deserialized because of predicate" + "\n");
     }
@@ -69,7 +69,7 @@ class PersistenceFrameworkTest {
 
         PersistenceFramework framework = new PersistenceFramework();
         // complex predicates can be used in deserialization
-        Person p = framework.deserialize(res, Person.class, j);
+        Person p = framework.deserialize(res, j);
         assertNotNull(p);
     }
 
