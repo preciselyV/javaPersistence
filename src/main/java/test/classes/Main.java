@@ -1,28 +1,45 @@
 package test.classes;
 
-import PersistenceFramework.PersistenceFramework;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
+import java.util.Collection;
 
-class tmp {
-    public String s1;
-    public String s2;
-    public int s3;
+import static PersistenceFramework.PersistenceFramework.deserializeObject;
+import static PersistenceFramework.PersistenceFramework.serialize;
 
-    public tmp (String s1, String s2, int s3)
-    {
-        this.s1 = s1;
-        this.s2 = s2;
-        this.s3 = s3;
-    }
-}
+
 
 
 public class Main {
     public static void main(String[] args) {
         //test.classes.Programmer ex = new test.classes.Programmer("asshole","Rofl Olegovich", 23, "original");
-        ArrayList<Integer> arr = new ArrayList<Integer>();
-        System.out.println(arr.getClass().toGenericString());
+
+        tmp t = new tmp();
+        t.s1 = "1";
+        t.s2 = "1";
+        t.s3 = 1;
+
+
+        //Person ex = new Person("pomogiti", 228, new ComplexField());
+        //ex.setPrikol(new ComplexField(1,"tmp"));
+        String res = serialize(t);
+        System.out.println(res);
+        try
+        {
+            tmp p = (tmp) deserializeObject(res, null);
+            if (p != null)
+            {
+                System.out.println(p.s1);
+                System.out.println(p.s2);
+                System.out.println(p.s3);
+            }
+        }
+        catch (ClassNotFoundException e )
+        {
+            System.out.println("class was not found");
+        }
+        catch (InvocationTargetException | InstantiationException | IllegalAccessException e )
+        {
+            e.printStackTrace();
+        }
     }
 }

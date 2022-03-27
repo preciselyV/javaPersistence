@@ -13,6 +13,9 @@ public class Person {
     private int age;
 
     @SerializeField
+    private ComplexField prikol;
+
+    @SerializeField
     public ComplexField complexField;
 
     @JsonClassCreator
@@ -37,6 +40,9 @@ public class Person {
     public String getName() {
         return name;
     }
+
+    public void setPrikol(ComplexField mama) {this.prikol = mama;}
+    public ComplexField getPrikol(){return this.prikol;}
 
     @Override
     public String toString() {
