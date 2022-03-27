@@ -77,8 +77,11 @@ public class PersistenceFramework {
         return serializeInner(obj).toString();
     }
 
-    private static JsonObject serializeInner(Object obj)
+    private static JsonValue serializeInner(Object obj)
     {
+        if (obj == null) {
+            return JsonValue.NULL;
+        }
         if (alreadySerialized.contains(obj))
             throw new PersistenceException("Cyclic object reference occurred");
         Class<?> cls = obj.getClass();
@@ -95,8 +98,14 @@ public class PersistenceFramework {
                 {
                     //TODO check whether we change visibility for every1 else
                     field.setAccessible(true);
-                    if (isPrimitiveToSerializer(field.getType()))
-                        jsonFields.add( field.getName(), field.get(obj).toString());
+                    if (isPrimitiveToSerializer(field.getType())) {
+                        if (field.get(obj) != null){
+                            jsonFields.add(field.getName(), field.get(obj).toString());
+                        }
+                        else {
+                            jsonFields.add(field.getName(), JsonValue.NULL);
+                        }
+                    }
                     else if (Collection.class.isAssignableFrom(field.getType())) {
                         alreadySerialized.push(obj);
                         jsonFields.add(field.getName(), serializeCollection((Collection<?>) field.get(obj)));
@@ -118,7 +127,10 @@ public class PersistenceFramework {
         return json.build();
     }
 
-    protected static JsonObject serializeCollection (Collection<?> collection) {
+    protected static JsonValue serializeCollection (Collection<?> collection) {
+        if (collection == null) {
+            return JsonValue.NULL;
+        }
         JsonObjectBuilder collectionBuilder = Json.createObjectBuilder();
         collectionBuilder.add("ClassName",collection.getClass().getName());
         if (collection.size() != 0)
@@ -127,7 +139,10 @@ public class PersistenceFramework {
         JsonArrayBuilder arrBuilder = Json.createArrayBuilder();
 
         for (var element : collection) {
-            if (element.getClass().isPrimitive() || element.getClass().equals(Integer.class) ||
+            if (element == null) {
+                arrBuilder.add(JsonValue.NULL);
+            }
+            else if (element.getClass().isPrimitive() || element.getClass().equals(Integer.class) ||
                                                     element.getClass().equals(String.class)) {
                 arrBuilder.add(element.toString());
             }
@@ -183,7 +198,7 @@ public class PersistenceFramework {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonString));
         JsonObject object = jsonReader.readObject();
         jsonReader.close();
-        if (object.containsKey("field")){
+        if (object.containsKey("fields")){
             if (predicate != null) {
                 JsonObject fields = object.getJsonObject("fields");
                 if (predicate.test(fields))
@@ -202,32 +217,40 @@ public class PersistenceFramework {
 
     // Обёртка над десериализаторами, чтобы не нужно было постоянно делать эту классификацию
     private static Object deserializeJsonObject(JsonObject object) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        if (object.containsKey("field")){
+        if (object.containsKey("fields")){
             return deserializeInner(object);
         }
         else if (object.containsKey("array")) {
-            deserializeCollection(object);
+            return deserializeCollection(object);
         }
         return null;
     }
 
-
+    @SuppressWarnings("unchecked")
     public static Collection<?> deserializeCollection(JsonObject jsonObject) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         String name = jsonObject.getString("ClassName");
         Class<?> cls = Class.forName(name);
         Collection<Object> collection = (Collection<Object>) Arrays.stream(cls.getConstructors()).filter(c ->  c.getParameterCount() == 0).toList().get(0).newInstance();
-        String genericClass = jsonObject.getString("genericType");
-        if (genericClass == null){
+        String genericClass;
+        try{
+            genericClass = jsonObject.getString("genericType");
+        }
+        catch (ClassCastException e) {
             return collection;
         }
+
         Class<?> genCls = Class.forName(genericClass);
 
         JsonArray jsonArray = jsonObject.getJsonArray("array");
-        for (JsonValue jsonValue : jsonArray) {
-            if (jsonValue.getValueType() == JsonValue.ValueType.STRING) {
-                collection.add(convert(genCls, jsonValue.toString()));
-            } else {
-                collection.add(deserializeJsonObject(jsonValue.asJsonObject()));
+        for (int i = 0; i < jsonArray.size(); i++) {
+            if (jsonArray.isNull(i)) {
+                collection.add(null);
+            }
+            else if (isPrimitiveToSerializer(genCls)) {
+                collection.add(convert(genCls, jsonArray.getString(i)));
+            }
+            else {
+                collection.add(deserializeJsonObject(jsonArray.getJsonObject(i)));
             }
         }
         return collection;
@@ -274,8 +297,13 @@ public class PersistenceFramework {
                         params.add(value);
                     }
                     catch (ClassCastException e) {
-                        var complexValue = fields.getJsonObject((String) key);
-                        params.add(complexValue);
+                        try {
+                            var complexValue = fields.getJsonObject((String) key);
+                            params.add(complexValue);
+                        }
+                        catch (ClassCastException e2) {
+                            params.add(null);
+                        }
                     }
                 }
                 else
@@ -285,8 +313,14 @@ public class PersistenceFramework {
                         toSet.put((String) key,value);
                     }
                     catch (ClassCastException e) {
-                        var complexValue = fields.getJsonObject((String) key);
-                        toSet.put((String)key, complexValue);
+                        try {
+                            var complexValue = fields.getJsonObject((String) key);
+                            toSet.put((String)key, complexValue);
+                        }
+                        catch (ClassCastException e2) {
+                            toSet.put((String) key, null);
+                        }
+
                     }
                 }
             }
@@ -299,7 +333,10 @@ public class PersistenceFramework {
                     params.set(i, convert(required[i], (String) params.get(i)));
                 }
                 catch (ClassCastException e) { // complex types
-                    params.set(i, deserializeInner((JsonObject) params.get(i)));
+                    params.set(i, deserializeJsonObject((JsonObject) params.get(i)));
+                }
+                catch (NullPointerException e2) {
+                    params.set(i, null);
                 }
             }
             Set<String> fieldKeys = toSet.keySet();
@@ -315,7 +352,10 @@ public class PersistenceFramework {
                         toSet.put(key, convert(fieldClass, (String) toSet.get(key)));
                     }
                     catch (ClassCastException e) {
-                        toSet.put(key, deserializeInner( (JsonObject) toSet.get(key)));
+                        toSet.put(key, deserializeJsonObject( (JsonObject) toSet.get(key)));
+                    }
+                    catch (NullPointerException e) {
+                        toSet.put(key, null);
                     }
                 }
                 catch (NoSuchFieldException e )
@@ -373,7 +413,7 @@ public class PersistenceFramework {
                     }
                     catch (ClassCastException e) {
                         JsonObject complexValue = fields.getJsonObject((String) key);
-                        Object updatedValue = deserializeInner(complexValue);
+                        Object updatedValue = deserializeJsonObject(complexValue);
                         field.set(res, updatedValue);
                     }
                 }

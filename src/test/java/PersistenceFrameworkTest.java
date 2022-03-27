@@ -22,16 +22,17 @@ class PersistenceFrameworkTest {
         // serialization test
         String res = PersistenceFramework.serialize(person);
         System.out.println("  Serialized JSON: " + res);
-        assertTrue(res.contains("Author"));
         assertTrue(res.contains("12"));
         // deserialization test
         PersistenceFramework framework = new PersistenceFramework();
         Person p = framework.deserialize(res);
         assertNotNull(p);
         System.out.println("  Deserialized JSON: " + p + "\n");
-        assertEquals(p.getAge(), 12);
-        assertEquals(p.getName(), "Author");
-        assertNotNull(p.complexField);
+        assertEquals(12, p.getAge());
+        assertEquals("Author", p.getName());
+        assertEquals(145, p.complexField.i);
+        assertEquals("Intresting String", p.complexField.str);
+        assertEquals(0, p.complexField.coll.size());
     }
 
     @Test
@@ -144,7 +145,7 @@ class PersistenceFrameworkTest {
     @Test
     public void testSimpleArrayDeserialization() {
         ArrayList<String> names = new ArrayList<>();
-        names.add("Maksim"); names.add("Vladimir"); names.add("Arseniy"); names.add("Denis");
+        names.add("Maksim"); names.add("Vladimir"); names.add("Arseniy"); names.add("Denis"); names.add(null);
 
         System.out.println("Test equal object serialization:");
         String res = PersistenceFramework.serialize(names);
@@ -152,6 +153,34 @@ class PersistenceFrameworkTest {
 
         PersistenceFramework pf = new PersistenceFramework();
         ArrayList<String> des = pf.deserialize(res);
-        System.out.println(des);
+        System.out.println("  Deserialized JSON: " + des);
+        assertEquals("Maksim", des.get(0));
+        assertEquals("Vladimir", des.get(1));
+        assertEquals("Arseniy", des.get(2));
+        assertEquals("Denis", des.get(3));
+        assertNull(des.get(4));
+    }
+
+    @Test
+    public void testNull() {
+        Person p = null;
+        String res = PersistenceFramework.serialize(p);
+        System.out.println("Null object serialized: " + res + "\n");
+    }
+
+    @Test
+    public void testNullField() {
+        System.out.println("Object with null fields test:");
+        Person p = new Person(null, 12, null);
+        String res = PersistenceFramework.serialize(p);
+        System.out.println("  Serialized object: " + res);
+
+        PersistenceFramework pf = new PersistenceFramework();
+        Person deserialized = pf.deserialize(res);
+        System.out.println("  Deserialized JSON: " + deserialized + "\n");
+        assertNotNull(deserialized);
+        assertEquals(12, deserialized.getAge());
+        assertNull(deserialized.complexField);
+        assertNull(deserialized.getName());
     }
 }

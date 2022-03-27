@@ -2,7 +2,6 @@ package test.classes;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-
 import static PersistenceFramework.PersistenceFramework.deserializeObject;
 import static PersistenceFramework.PersistenceFramework.serialize;
 

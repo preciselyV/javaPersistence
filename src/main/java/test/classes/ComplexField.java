@@ -33,9 +33,10 @@ public class ComplexField {
 
     @Override
     public String toString() {
-        return "test.classes.ComplexField{" +
+        return "ComplexField{" +
                 "i=" + i +
                 ", str='" + str + '\'' +
+                ", coll=" + coll +
                 '}';
     }
 }
