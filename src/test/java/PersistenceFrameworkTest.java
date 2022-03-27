@@ -119,10 +119,25 @@ class PersistenceFrameworkTest {
     }
 
 
-    /*@Test(expected = PersistenceException.class)
-    public void testBidirectionalRelationshipsSerialization() {
+    @Test
+    public void testBidirectionalRelationshipsSerializationWithException() {
         User user = new User(1, "John");
         User.Item item = new User.Item(2, "book", user);
         user.addItem(item);
-    }*/
+
+        assertThrows(PersistenceException.class, () -> {
+            PersistenceFramework.serialize(user);
+        });
+    }
+
+    @Test
+    public void testEqualObjectSerialization() {
+        User user = new User(1, "John");
+        ArrayList<User> users = new ArrayList<>();
+        users.add(user);
+        users.add(user);
+        System.out.println("Test equal object serialization:");
+        String res = PersistenceFramework.serialize(users);
+        System.out.println("  Serialized JSON: " + res + "\n");
+    }
 }

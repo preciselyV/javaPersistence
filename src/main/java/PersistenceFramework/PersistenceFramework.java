@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 
 
 //TODO нужно придумать что делать с вложенными классами
-//TODO получать id объектов, чтобы разбираться с циклами
 //TODO настройка приватных полей.
 //TODO многопоточность для записи ?
 //TODO если атрибут класса это тоже класс, но при этом поле помечено, а класс нет - что делать? (настроение - падать)
@@ -21,6 +20,7 @@ import java.util.function.Predicate;
 //TODO что делать в случаях, когда указаны не все поля, которые нужны конструкору?
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
 // TODO simple array support?
+// TODO collection with predicate support
 // TODO null fields support
 
 
@@ -126,12 +126,12 @@ public class PersistenceFramework {
                 arrBuilder.add(element.toString());
             }
             else if (Collection.class.isAssignableFrom(element.getClass())) {
-                alreadySerialized.push(element);
+                alreadySerialized.push(collection);
                 arrBuilder.add(serializeCollection((Collection<?>) element));
                 alreadySerialized.pop();
             }
             else {
-                alreadySerialized.push(element);
+                alreadySerialized.push(collection);
                 arrBuilder.add(serializeInner(element));
                 alreadySerialized.pop();
             }
