@@ -196,7 +196,6 @@ public class PersistenceFramework {
         // пока мы просто договариваемся, что есть только один аннотированный конструктор
         if (constructors.length == 1)
         {
-
             Constructor<?> constructor = (Constructor<?>)constructors[0];
 
             Annotation[][] annos = constructor.getParameterAnnotations();
@@ -218,7 +217,9 @@ public class PersistenceFramework {
             //Fields initialization
             JsonObject fields = object.getJsonObject("fields");
             ArrayList<Object> params = new ArrayList<>();
+            HashMap<String, Object> toSet = new HashMap<>();
             Set<?> keys = fields.keySet();
+
             for (var key : keys)
             {
                 if (constructorParams.contains( (String) key))
@@ -229,10 +230,22 @@ public class PersistenceFramework {
                     }
                     catch (ClassCastException e) {
                         var complexValue = fields.getJsonObject((String) key);
-                        params.add(deserializeInner(complexValue));
+                        params.add(complexValue);
+                    }
+                }
+                else
+                {
+                    try {
+                        var value = (Object) fields.getString( (String) key);
+                        toSet.put((String) key,value);
+                    }
+                    catch (ClassCastException e) {
+                        var complexValue = fields.getJsonObject((String) key);
+                        toSet.put((String)key, complexValue);
                     }
                 }
             }
+
             // Parameters conversion to right types
             Class<?>[] required = constructor.getParameterTypes();
             for (int i = 0; i< required.length; i++)
@@ -241,20 +254,54 @@ public class PersistenceFramework {
                     params.set(i, convert(required[i], (String) params.get(i)));
                 }
                 catch (ClassCastException e) { // complex types
-                    params.set(i, params.get(i));
+                    params.set(i, deserializeInner((JsonObject) params.get(i)));
+                }
+            }
+            Set<String> fieldKeys = toSet.keySet();
+            for (String key : fieldKeys)
+            {
+                Object value = toSet.get(key);
+                try
+                {
+                    Field field = cls.getField(key);
+                    Class<?> fieldClass = field.getType();
+                    try {
+                        toSet.put(key, convert(fieldClass, (String) toSet.get(key)));
+                    }
+                    catch (ClassCastException e) {
+                        toSet.put(key, deserializeInner( (JsonObject) toSet.get(key)));
+                    }
+                }
+                catch (NoSuchFieldException e )
+                {
+                    e.printStackTrace();
                 }
             }
 
+            Object res = null;
             try
             {
-                return constructor.newInstance(params.toArray());
+                res =  constructor.newInstance(params.toArray());
+
             }
             catch (IllegalArgumentException e )
             {
                 e.printStackTrace();
                 return null;
             }
+            for(String key : fieldKeys)
+            {
+                try {
+                    Field fld = cls.getField(key);
+                    fld.setAccessible(true);
+                    fld.set(res, toSet.get(key));
+                }
+                catch (NoSuchFieldException ignored){}
+
+            }
+            return res;
         }
+        // случай, когда конструктор не объявлен явно
         else {
             constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.getParameterCount() == 0).toArray();
             if (constructors.length == 1) {
@@ -265,7 +312,6 @@ public class PersistenceFramework {
                 throw new PersistenceException("Couldn't find constructor for the class");
             }
         }
-        // TODO поля, которые не были затронуты конструктором
     }
 
     protected static boolean isPrimitiveToSerializer(Class<?> cls) {

@@ -25,6 +25,7 @@ public class Main {
         tmp t = new tmp("1","2",3);
 
         Person ex = new Person("pomogiti", 228, new ComplexField());
+        ex.prikol = "Prikol";
         String res = PersistenceFramework.serialize(ex);
         System.out.println(res);
         try
@@ -34,6 +35,7 @@ public class Main {
             {
                 System.out.println(p.getAge());
                 System.out.println(p.getName());
+                System.out.println(p.prikol);
             }
         }
         catch (ClassNotFoundException e )

@@ -11,7 +11,8 @@ public class Person {
     private String name;
     @SerializeField
     private int age;
-
+    @SerializeField
+    public String prikol;
     @SerializeField
     public ComplexField complexField;
 
