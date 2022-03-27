@@ -263,7 +263,8 @@ public class PersistenceFramework {
                 Object value = toSet.get(key);
                 try
                 {
-                    Field field = cls.getField(key);
+                    Field field = cls.getDeclaredField(key);
+                    field.setAccessible(true);
                     Class<?> fieldClass = field.getType();
                     try {
                         toSet.put(key, convert(fieldClass, (String) toSet.get(key)));
@@ -292,7 +293,7 @@ public class PersistenceFramework {
             for(String key : fieldKeys)
             {
                 try {
-                    Field fld = cls.getField(key);
+                    Field fld = cls.getDeclaredField(key);
                     fld.setAccessible(true);
                     fld.set(res, toSet.get(key));
                 }

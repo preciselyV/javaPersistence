@@ -11,8 +11,10 @@ public class Person {
     private String name;
     @SerializeField
     private int age;
+
     @SerializeField
-    public String prikol;
+    private ComplexField prikol;
+
     @SerializeField
     public ComplexField complexField;
 
@@ -38,6 +40,9 @@ public class Person {
     public String getName() {
         return name;
     }
+
+    public void setPrikol(ComplexField mama) {this.prikol = mama;}
+    public ComplexField getPrikol(){return this.prikol;}
 
     @Override
     public String toString() {

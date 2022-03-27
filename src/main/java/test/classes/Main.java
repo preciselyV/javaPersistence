@@ -3,6 +3,7 @@ package test.classes;
 import PersistenceFramework.PersistenceFramework;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 
 class tmp {
     public String s1;
@@ -25,7 +26,7 @@ public class Main {
         tmp t = new tmp("1","2",3);
 
         Person ex = new Person("pomogiti", 228, new ComplexField());
-        ex.prikol = "Prikol";
+        ex.setPrikol(new ComplexField());
         String res = PersistenceFramework.serialize(ex);
         System.out.println(res);
         try
@@ -35,7 +36,7 @@ public class Main {
             {
                 System.out.println(p.getAge());
                 System.out.println(p.getName());
-                System.out.println(p.prikol);
+                System.out.println(p.getPrikol());
             }
         }
         catch (ClassNotFoundException e )
