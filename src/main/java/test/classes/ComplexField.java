@@ -1,5 +1,6 @@
 package test.classes;
 
+import PersistenceFramework.CreatorField;
 import PersistenceFramework.JsonClassCreator;
 import PersistenceFramework.Serialize;
 import PersistenceFramework.SerializeField;
@@ -18,7 +19,8 @@ public class ComplexField {
 
     public ComplexField(){};
 
-    public ComplexField(int i, String str){
+
+    public ComplexField( int i, String str){
         this.i = i;
         this.str = str;
     }

@@ -279,10 +279,10 @@ public class PersistenceFramework {
                 }
             }
 
-            Object res = null;
+            Object res;
             try
             {
-                res =  constructor.newInstance(params.toArray());
+                res = constructor.newInstance(params.toArray());
 
             }
             catch (IllegalArgumentException e )
@@ -304,14 +304,39 @@ public class PersistenceFramework {
         }
         // случай, когда конструктор не объявлен явно
         else {
+
             constructors = Arrays.stream(cls.getConstructors()).filter(c -> c.getParameterCount() == 0).toArray();
+            Object res;
             if (constructors.length == 1) {
                 Constructor<?> constructor = (Constructor<?>)constructors[0];
-                return constructor.newInstance();
+                res =  constructor.newInstance();
             }
             else {
                 throw new PersistenceException("Couldn't find constructor for the class");
             }
+            JsonObject fields = object.getJsonObject("fields");
+            Set<?> keys = fields.keySet();
+            for (var key : keys)
+            {
+                try {
+                    Field field = cls.getDeclaredField((String) key);
+                    field.setAccessible(true);
+                    try {
+                        String value = fields.getString( (String) key);
+                        Object updatedValue = convert(field.getType(), value);
+                        field.set(res, updatedValue);
+                    }
+                    catch (ClassCastException e) {
+                        JsonObject complexValue = fields.getJsonObject((String) key);
+                        Object updatedValue = deserializeInner(complexValue);
+                        field.set(res, updatedValue);
+                    }
+                }
+                catch (NoSuchFieldException ignored){}
+
+
+            }
+            return res;
         }
     }
 
