@@ -10,26 +10,20 @@ import static PersistenceFramework.PersistenceFramework.serialize;
 
 public class Main {
     public static void main(String[] args) {
-        //test.classes.Programmer ex = new test.classes.Programmer("asshole","Rofl Olegovich", 23, "original");
+        //Programmer ex = new Programmer("asshole","Rofl Olegovich", 23, "original");
 
-        tmp t = new tmp();
-        t.s1 = "1";
-        t.s2 = "1";
-        t.s3 = 1;
-
-
-        //Person ex = new Person("pomogiti", 228, new ComplexField());
-        //ex.setPrikol(new ComplexField(1,"tmp"));
-        String res = serialize(t);
+        Person ex = new Person("pomogiti", 228, new ComplexField());
+        ex.setPrikol(new ComplexField(1,"tmp"));
+        String res = serialize(ex);
         System.out.println(res);
         try
         {
-            tmp p = (tmp) deserializeObject(res, null);
+            Person p = (Person) deserializeObject(res, null);
             if (p != null)
             {
-                System.out.println(p.s1);
-                System.out.println(p.s2);
-                System.out.println(p.s3);
+                System.out.println(p.getAge());
+                System.out.println(p.getName());
+                System.out.println(p.getPrikol());
             }
         }
         catch (ClassNotFoundException e )

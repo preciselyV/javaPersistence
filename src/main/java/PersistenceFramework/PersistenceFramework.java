@@ -111,20 +111,20 @@ public class PersistenceFramework {
                     field.setAccessible(true);
                     if (isPrimitiveToSerializer(field.getType())) {
                         if (field.get(obj) != null){
-                            jsonFields.add(field.getName(), field.get(obj).toString());
+                            jsonFields.add(key, field.get(obj).toString());
                         }
                         else {
-                            jsonFields.add(field.getName(), JsonValue.NULL);
+                            jsonFields.add(key, JsonValue.NULL);
                         }
                     }
                     else if (Collection.class.isAssignableFrom(field.getType())) {
                         alreadySerialized.push(obj);
-                        jsonFields.add(field.getName(), serializeCollection((Collection<?>) field.get(obj)));
+                        jsonFields.add(key, serializeCollection((Collection<?>) field.get(obj)));
                         alreadySerialized.pop();
                     }
                     else {
                         alreadySerialized.push(obj);
-                        jsonFields.add(field.getName(), serializeInner(field.get(obj)));
+                        jsonFields.add(key, serializeInner(field.get(obj)));
                         alreadySerialized.pop();
                     }
                 }
@@ -286,6 +286,37 @@ public class PersistenceFramework {
         return collection;
     }
 
+    private static Field findField(Class<?> cls, String fieldName)
+    {
+        Field res = null;
+        var fields = cls.getDeclaredFields();
+        Serialize an = cls.getAnnotation(Serialize.class);
+        if (an == null)
+            throw new PersistenceException("deserializing unannotated class");
+        for (Field fld : fields)
+        {
+            //fld.setAccessible(true);
+            if (fld.getName().equals(fieldName))
+            {
+                res = fld;
+                break;
+            }
+            else if (fld.isAnnotationPresent(SerializeField.class))
+            {
+                SerializeField serAno = fld.getAnnotation(SerializeField.class);
+                if (serAno.Name().equals(fieldName))
+                {
+                    res = fld;
+                    break;
+                }
+            }
+        }
+
+        if (res == null && an.requiresParent())
+            res = findField(cls.getSuperclass(),fieldName);
+        return res ;
+    }
+
     private static Object deserializeInner(JsonObject object) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         //Class initialization (find class and constructor)
         String name = object.getString("ClassName");
@@ -381,24 +412,17 @@ public class PersistenceFramework {
             for (String key : fieldKeys)
             {
                 Object value = toSet.get(key);
-                try
-                {
-                    Field field = cls.getDeclaredField(key);
-                    field.setAccessible(true);
-                    Class<?> fieldClass = field.getType();
-                    try {
-                        toSet.put(key, convert(fieldClass, (String) toSet.get(key)));
-                    }
-                    catch (ClassCastException e) {
-                        toSet.put(key, deserializeJsonObject( (JsonObject) toSet.get(key)));
-                    }
-                    catch (NullPointerException e) {
-                        toSet.put(key, null);
-                    }
+                Field field = findField(cls, key);
+                field.setAccessible(true);
+                Class<?> fieldClass = field.getType();
+                try {
+                    toSet.put(key, convert(fieldClass, (String) toSet.get(key)));
                 }
-                catch (NoSuchFieldException e )
-                {
-                    e.printStackTrace();
+                catch (ClassCastException e) {
+                    toSet.put(key, deserializeJsonObject( (JsonObject) toSet.get(key)));
+                }
+                catch (NullPointerException e) {
+                    toSet.put(key, null);
                 }
             }
 
@@ -415,13 +439,9 @@ public class PersistenceFramework {
             }
             for(String key : fieldKeys)
             {
-                try {
-                    Field fld = cls.getDeclaredField(key);
-                    fld.setAccessible(true);
-                    fld.set(res, toSet.get(key));
-                }
-                catch (NoSuchFieldException ignored){}
-
+                Field fld = findField(cls,key);
+                fld.setAccessible(true);
+                fld.set(res, toSet.get(key));
             }
             return res;
         }
@@ -441,22 +461,19 @@ public class PersistenceFramework {
             Set<?> keys = fields.keySet();
             for (var key : keys)
             {
-                try {
-                    Field field = cls.getDeclaredField((String) key);
-                    field.setAccessible(true);
-                    try {
-                        String value = fields.getString( (String) key);
-                        Object updatedValue = convert(field.getType(), value);
-                        field.set(res, updatedValue);
-                    }
-                    catch (ClassCastException e) {
-                        JsonObject complexValue = fields.getJsonObject((String) key);
-                        Object updatedValue = deserializeJsonObject(complexValue);
-                        field.set(res, updatedValue);
-                    }
-                }
-                catch (NoSuchFieldException ignored){}
 
+                Field field = findField(cls, (String) key);
+                field.setAccessible(true);
+                try {
+                    String value = fields.getString( (String) key);
+                    Object updatedValue = convert(field.getType(), value);
+                    field.set(res, updatedValue);
+                }
+                catch (ClassCastException e) {
+                    JsonObject complexValue = fields.getJsonObject((String) key);
+                    Object updatedValue = deserializeJsonObject(complexValue);
+                    field.set(res, updatedValue);
+                }
 
             }
             return res;
