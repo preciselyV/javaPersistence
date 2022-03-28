@@ -29,25 +29,29 @@ public class PersistenceFramework {
 
     public PersistenceFramework() {}
 
-    private static ArrayList<Field> getFields(Class<?> cls, Object obj)
+    private static HashMap<String, Field> getFields(Class<?> cls, Object obj)
     {
 
         if (cls.isAnnotationPresent(Serialize.class))
         {
             Serialize an = cls.getAnnotation(Serialize.class);
-            ArrayList<Field> fields = new ArrayList<Field>();
+            HashMap<String, Field>fields = new HashMap<>();
 
             // in case we need some of the parent's fields
             if (an.requiresParent())
             {
-                fields.addAll(getFields(cls.getSuperclass(), obj));
+                // if names intersect then someone's an idiot and I don't want to deal with it
+                fields.putAll(getFields(cls.getSuperclass(), obj));
             }
             Field[] flds = cls.getDeclaredFields();
 
             // are we choosing some specific fields or all of them
             if (an.allFields())
             {
-                fields.addAll(List.of(flds));
+                for (Field fld : flds)
+                {
+                    fields.put(fld.getName(),fld);
+                }
             }
             else
             {
@@ -55,12 +59,19 @@ public class PersistenceFramework {
                 {
                     if (fld.isAnnotationPresent(SerializeField.class))
                     {
-                        fields.add(fld);
+                        SerializeField serAno = fld.getAnnotation(SerializeField.class);
+                        if (!Objects.equals(serAno.Name(), ""))
+                        {
+                            fields.put(serAno.Name(), fld);
+                        }
+                        else
+                        {
+                            fields.put(fld.getName(), fld);
+                        }
                     }
                 }
             }
             return fields;
-
         }
         else
         {
@@ -89,12 +100,14 @@ public class PersistenceFramework {
         json.add("ClassName", className);
         if (objectFields != null)
         {
+            var keys = objectFields.keySet();
             var jsonFields = Json.createObjectBuilder();
-            for (Field field : objectFields)
+            for (String key : keys)
             {
                 try
                 {
                     //TODO check whether we change visibility for every1 else
+                    Field field = objectFields.get(key);
                     field.setAccessible(true);
                     if (isPrimitiveToSerializer(field.getType())) {
                         if (field.get(obj) != null){

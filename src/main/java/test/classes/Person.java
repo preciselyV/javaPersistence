@@ -7,15 +7,15 @@ import PersistenceFramework.SerializeField;
 
 @Serialize(allFields = false)
 public class Person {
-    @SerializeField
+    @SerializeField()
     private String name;
-    @SerializeField
+    @SerializeField()
     private int age;
 
-    @SerializeField
+    @SerializeField()
     private ComplexField prikol;
 
-    @SerializeField
+    @SerializeField()
     public ComplexField complexField;
 
     @JsonClassCreator
