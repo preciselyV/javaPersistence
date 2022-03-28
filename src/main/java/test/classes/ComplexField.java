@@ -9,16 +9,11 @@ import java.util.ArrayList;
 
 @Serialize(allFields = true)
 public class ComplexField {
-    @SerializeField
     public int i = 0;
-    @SerializeField
     public String str = "Some string";
-    @SerializeField
     public ArrayList<Integer> coll = new ArrayList<>();
 
-
     public ComplexField(){};
-
 
     public ComplexField( int i, String str){
         this.i = i;

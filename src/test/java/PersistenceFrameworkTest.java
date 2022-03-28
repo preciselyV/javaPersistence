@@ -18,7 +18,7 @@ class PersistenceFrameworkTest {
     @Test
     public void testComplexInnerFieldSerialization()  {
         System.out.println("Base functionality test:");
-        Person person = new Person("Author", 12, new ComplexField(145, "Intresting String"));
+        Person person = new Person("Author", 12, new ComplexField(145, "Interesting String"));
         // serialization test
         String res = PersistenceFramework.serialize(person);
         System.out.println("  Serialized JSON: " + res);
@@ -27,11 +27,11 @@ class PersistenceFrameworkTest {
         PersistenceFramework framework = new PersistenceFramework();
         Person p = framework.deserialize(res);
         assertNotNull(p);
-        System.out.println("  Deserialized JSON: " + p + "\n");
+        System.out.println("  Deserialized Object: " + p + "\n");
         assertEquals(12, p.getAge());
         assertEquals("Author", p.getName());
         assertEquals(145, p.complexField.i);
-        assertEquals("Intresting String", p.complexField.str);
+        assertEquals("Interesting String", p.complexField.str);
         assertEquals(0, p.complexField.coll.size());
     }
 
@@ -43,7 +43,7 @@ class PersistenceFrameworkTest {
         System.out.println("  Serialized JSON: " + res);
         // deserialization test
         PersistenceFramework framework = new PersistenceFramework();
-        JSONPredicate<Integer> jsonPredicate = new JSONPredicate<Integer>("CF/i", (Integer i) -> i != 0, Integer.class);
+        JSONPredicate<Integer> jsonPredicate = new JSONPredicate<Integer>("complexField/i", (Integer i) -> i != 0, Integer.class);
         // simple predicates can be used in deserialization
         Person p = framework.deserialize(res, jsonPredicate);
         assertNull(p);
@@ -56,8 +56,8 @@ class PersistenceFrameworkTest {
         Person person = new Person("Author", 12, new ComplexField());
         String res = PersistenceFramework.serialize(person);
         System.out.println("  Serialized JSON: " + res);
-        JSONPredicate<Integer> jsonPredicate1 = new JSONPredicate<>("CF/i", (Integer i) -> i == 0, Integer.class);
-        JSONPredicate<String> jsonPredicate2 = new JSONPredicate<>("CF/str", (String s) -> s.length()<5, String.class);
+        JSONPredicate<Integer> jsonPredicate1 = new JSONPredicate<>("complexField/i", (Integer i) -> i == 0, Integer.class);
+        JSONPredicate<String> jsonPredicate2 = new JSONPredicate<>("complexField/str", (String s) -> s.length()<5, String.class);
         var j = jsonPredicate1.and(jsonPredicate2.negate());
 
         // test predicates test() method
@@ -153,7 +153,7 @@ class PersistenceFrameworkTest {
 
         PersistenceFramework pf = new PersistenceFramework();
         ArrayList<String> des = pf.deserialize(res);
-        System.out.println("  Deserialized JSON: " + des);
+        System.out.println("  Deserialized collection: " + des);
         assertEquals("Maksim", des.get(0));
         assertEquals("Vladimir", des.get(1));
         assertEquals("Arseniy", des.get(2));
@@ -173,11 +173,11 @@ class PersistenceFrameworkTest {
         System.out.println("Object with null fields test:");
         Person p = new Person(null, 12, null);
         String res = PersistenceFramework.serialize(p);
-        System.out.println("  Serialized object: " + res);
+        System.out.println("  Serialized JSON: " + res);
 
         PersistenceFramework pf = new PersistenceFramework();
         Person deserialized = pf.deserialize(res);
-        System.out.println("  Deserialized JSON: " + deserialized + "\n");
+        System.out.println("  Deserialized object: " + deserialized + "\n");
         assertNotNull(deserialized);
         assertEquals(12, deserialized.getAge());
         assertNull(deserialized.complexField);
@@ -198,15 +198,15 @@ class PersistenceFrameworkTest {
         System.out.println("  Serialized collection: " + serializedString);
 
         // constructing predicates
-        JSONPredicate<Integer> pred1 = new JSONPredicate<>("aaa", (Integer age) -> age > 18, Integer.class);
-        JSONPredicate<Integer> pred2 = new JSONPredicate<>("aaa", (Integer age) -> age > 40, Integer.class);
-        JSONPredicate<String> pred3 = new JSONPredicate<>("CF/str", (String str) -> str.length()>5, String.class);
+        JSONPredicate<Integer> pred1 = new JSONPredicate<>("personAge", (Integer age) -> age > 18, Integer.class);
+        JSONPredicate<Integer> pred2 = new JSONPredicate<>("personAge", (Integer age) -> age > 40, Integer.class);
+        JSONPredicate<String> pred3 = new JSONPredicate<>("complexField/str", (String str) -> str.length()>5, String.class);
         Predicate<JsonObject> complexPredicate = pred1.and(pred2.negate()).and(pred3);
 
         PersistenceFramework persistenceFramework = new PersistenceFramework();
         ArrayList<Person> deserialized = persistenceFramework.deserialize(serializedString, complexPredicate);
 
-        System.out.println("  Deserialized JSON: " + deserialized + "\n");
+        System.out.println("  Deserialized collection: " + deserialized + "\n");
         assertNotNull(deserialized);
         assertEquals(2, deserialized.size());
         assertEquals("Maksim", deserialized.get(0).getName());

@@ -5,21 +5,22 @@ import PersistenceFramework.JsonClassCreator;
 import PersistenceFramework.Serialize;
 import PersistenceFramework.SerializeField;
 
-@Serialize(allFields = false)
+@Serialize()
 public class Person {
-    @SerializeField(Name = "name")
+    @SerializeField()
     private String name;
-    @SerializeField(Name = "aaa")
+    @SerializeField(Name = "personAge")
     private int age;
 
-    @SerializeField()
+    @SerializeField(Name = "uselessField")
     private ComplexField prikol;
 
-    @SerializeField(Name = "CF")
+    @SerializeField()
     public ComplexField complexField;
 
     @JsonClassCreator
-    public Person (@CreatorField("name") String name , @CreatorField("aaa") int age, @CreatorField("CF") ComplexField complexField)
+    public Person (@CreatorField("name") String name , @CreatorField("personAge") int age,
+                   @CreatorField("complexField") ComplexField complexField)
     {
         this.name = name;
         this.age = age;
