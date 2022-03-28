@@ -7,9 +7,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class JSONPredicate<T> implements Predicate<JsonObject> {
-    String path;
-    Predicate<T> fieldPredicate;
-    List<String> pathNames;
+    private final Predicate<T> fieldPredicate;
+    protected List<String> pathNames;
 
     // TODO find how to get class without storing it (maybe Reflection will help)
     Class<T> valueType;
@@ -20,7 +19,6 @@ public class JSONPredicate<T> implements Predicate<JsonObject> {
                 valueType.equals(String.class))) {
             throw new PersistenceException("Predicates work only with primitive types");
         }
-        this.path = path;
         this.fieldPredicate = fieldPredicate;
         this.valueType = valueType;
         this.pathNames = Arrays.stream(path.split("/")).toList();

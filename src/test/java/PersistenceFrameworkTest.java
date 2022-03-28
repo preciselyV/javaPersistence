@@ -9,8 +9,8 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -182,5 +182,34 @@ class PersistenceFrameworkTest {
         assertEquals(12, deserialized.getAge());
         assertNull(deserialized.complexField);
         assertNull(deserialized.getName());
+    }
+
+    @Test
+    public void testFilterWithPredicateToCollection() {
+        // serializing collection
+        System.out.println("Filtering JSON with collection of objects:");
+        ArrayList<Person> people = new ArrayList<>();
+        people.add(new Person("Maksim", 20, new ComplexField(145, "Long string!!!!!!")));
+        people.add(new Person("Vladimir", 20, new ComplexField(100, "Some info")));
+        people.add(new Person("Arseniy", 19, new ComplexField(1, "")));
+        people.add(new Person("Denis", 20, new ComplexField(205, "b")));
+        people.add(new Person("Oldman", 65, new ComplexField(0, "UNKNOWN")));
+        String serializedString = PersistenceFramework.serialize(people);
+        System.out.println("  Serialized collection: " + serializedString);
+
+        // constructing predicates
+        JSONPredicate<Integer> pred1 = new JSONPredicate<>("age", (Integer age) -> age > 18, Integer.class);
+        JSONPredicate<Integer> pred2 = new JSONPredicate<>("age", (Integer age) -> age > 40, Integer.class);
+        JSONPredicate<String> pred3 = new JSONPredicate<>("complexField/str", (String str) -> str.length()>5, String.class);
+        Predicate<JsonObject> complexPredicate = pred1.and(pred2.negate()).and(pred3);
+
+        PersistenceFramework persistenceFramework = new PersistenceFramework();
+        ArrayList<Person> deserialized = persistenceFramework.deserialize(serializedString, complexPredicate);
+
+        System.out.println("  Deserialized JSON: " + deserialized + "\n");
+        assertNotNull(deserialized);
+        assertEquals(2, deserialized.size());
+        assertEquals("Maksim", deserialized.get(0).getName());
+        assertEquals("Vladimir", deserialized.get(1).getName());
     }
 }

@@ -12,7 +12,6 @@ import java.beans.PropertyEditorManager;
 import java.util.function.Predicate;
 
 
-//TODO нужно придумать что делать с вложенными классами
 //TODO настройка приватных полей.
 //TODO многопоточность для записи ?
 //TODO если атрибут класса это тоже класс, но при этом поле помечено, а класс нет - что делать? (настроение - падать)
@@ -21,7 +20,6 @@ import java.util.function.Predicate;
 //TODO придумать что то для всяких контейнеров. Наверное мы хотим хранить не целиком эти классы, а просто содержимое
 // TODO simple array support?
 // TODO collection with predicate support
-// TODO null fields support
 // TODO collection deserialization
 
 
@@ -209,7 +207,26 @@ public class PersistenceFramework {
         }
         // collection on upper level support
         else if (object.containsKey("array")) {
-            // TODO predicate
+            if (predicate != null) {
+                JsonObjectBuilder filteredCollection = Json.createObjectBuilder();
+                filteredCollection.add("ClassName", object.getString("ClassName"));
+                try {
+                    filteredCollection.add("genericType", object.getString("genericType"));
+                }
+                catch (ClassCastException e) {
+                    return deserializeCollection(object);
+                }
+
+                JsonArrayBuilder filteredArray = Json.createArrayBuilder();
+                JsonArray elements = object.getJsonArray("array");
+                for(int i = 0; i < elements.size(); i++){
+                    JsonObject obj = elements.getJsonObject(i);
+                    if (predicate.test(obj.getJsonObject("fields")))
+                        filteredArray.add(obj);
+                }
+                filteredCollection.add("array", filteredArray.build());
+                return deserializeCollection(filteredCollection.build());
+            }
             return deserializeCollection(object);
         }
         return null;
@@ -227,7 +244,7 @@ public class PersistenceFramework {
     }
 
     @SuppressWarnings("unchecked")
-    public static Collection<?> deserializeCollection(JsonObject jsonObject) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private static Collection<?> deserializeCollection(JsonObject jsonObject) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         String name = jsonObject.getString("ClassName");
         Class<?> cls = Class.forName(name);
         Collection<Object> collection = (Collection<Object>) Arrays.stream(cls.getConstructors()).filter(c ->  c.getParameterCount() == 0).toList().get(0).newInstance();
