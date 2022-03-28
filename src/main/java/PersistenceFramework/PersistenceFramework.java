@@ -317,18 +317,18 @@ public class PersistenceFramework {
             ArrayList<Object> params = new ArrayList<>();
             HashMap<String, Object> toSet = new HashMap<>();
             Set<?> keys = fields.keySet();
-
-            for (var key : keys)
+            //getting constructor params
+            for (String fieldName: constructorParams)
             {
-                if (constructorParams.contains( (String) key))
+                if (keys.contains(fieldName))
                 {
                     try {
-                        var value = (Object) fields.getString( (String) key);
+                        var value = (Object) fields.getString(fieldName);
                         params.add(value);
                     }
                     catch (ClassCastException e) {
                         try {
-                            var complexValue = fields.getJsonObject((String) key);
+                            var complexValue = fields.getJsonObject(fieldName);
                             params.add(complexValue);
                         }
                         catch (ClassCastException e2) {
@@ -337,6 +337,14 @@ public class PersistenceFramework {
                     }
                 }
                 else
+                {
+                    System.out.println("ALERT COULDN'T FIND A KEY");
+                }
+            }
+            //getting other fields
+            for (var key : keys)
+            {
+                if (!constructorParams.contains( (String) key))
                 {
                     try {
                         var value = (Object) fields.getString( (String) key);
